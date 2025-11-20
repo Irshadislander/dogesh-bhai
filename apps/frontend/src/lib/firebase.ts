@@ -1,6 +1,8 @@
 import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -9,13 +11,31 @@ const firebaseConfig = {
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
-if (Object.values(firebaseConfig).some((value) => !value)) {
-  console.warn("Firebase client SDK is missing configuration. Check your .env file.");
+// --------------------------------------
+// Initialize Firebase
+// --------------------------------------
+const app = initializeApp(firebaseConfig);
+
+// Analytics only works in browser
+let analytics: any = null;
+if (typeof window !== "undefined") {
+  try {
+    analytics = getAnalytics(app);
+  } catch {}
 }
 
-const firebaseApp = initializeApp(firebaseConfig);
-export const firebaseAuth = getAuth(firebaseApp);
-export const firestore = getFirestore(firebaseApp);
-export default firebaseApp;
+// --------------------------------------
+// Firebase Services
+// --------------------------------------
+const auth = getAuth(app);
+const firebaseAuth = auth;   // 👈 FIX for your error
+const db = getFirestore(app);
+const storage = getStorage(app);
+
+// --------------------------------------
+// Exports
+// --------------------------------------
+export { app, analytics, auth, firebaseAuth, db, storage };
