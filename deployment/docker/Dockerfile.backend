@@ -1,0 +1,16 @@
+FROM node:18-alpine
+WORKDIR /app
+RUN corepack enable
+
+COPY package.json pnpm-workspace.yaml tsconfig.base.json ./
+COPY packages/shared/package.json packages/shared/
+COPY apps/backend/package.json apps/backend/
+
+RUN pnpm install --filter backend --filter @visway/shared --prod --ignore-scripts
+
+COPY packages ./packages
+COPY apps/backend ./apps/backend
+
+RUN pnpm --filter @visway/shared build && pnpm --filter backend build
+
+CMD ["node", "apps/backend/dist/index.js"]

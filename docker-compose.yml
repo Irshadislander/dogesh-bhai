@@ -1,0 +1,37 @@
+version: "3.9"
+
+services:
+  backend:
+    image: node:18-alpine
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+    command: sh -c "corepack enable && pnpm install --recursive && pnpm --filter backend dev"
+    environment:
+      - PORT=4000
+      - FIREBASE_PROJECT_ID
+      - FIREBASE_CLIENT_EMAIL
+      - FIREBASE_PRIVATE_KEY
+      - FIREBASE_DATABASE_URL
+      - ALLOWED_ORIGINS=http://localhost:5173
+    ports:
+      - "4000:4000"
+
+  frontend:
+    image: node:18-alpine
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+    command: sh -c "corepack enable && pnpm install --recursive && pnpm --filter frontend dev -- --host 0.0.0.0 --port 5173"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:4000
+      - VITE_FIREBASE_API_KEY
+      - VITE_FIREBASE_AUTH_DOMAIN
+      - VITE_FIREBASE_PROJECT_ID
+      - VITE_FIREBASE_STORAGE_BUCKET
+      - VITE_FIREBASE_MESSAGING_SENDER_ID
+      - VITE_FIREBASE_APP_ID
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend

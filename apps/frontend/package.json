@@ -1,0 +1,32 @@
+{
+  "name": "frontend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "lint": "echo \"Add lint (eslint) task\""
+  },
+  "dependencies": {
+    "@visway/shared": "workspace:^",
+    "axios": "^1.6.5",
+    "element-plus": "^2.4.2",
+    "firebase": "^10.8.0",
+    "pinia": "^2.1.7",
+    "vue": "^3.3.11",
+    "vue-router": "^4.2.5"
+  },
+  "devDependencies": {
+    "@tailwindcss/forms": "^0.5.7",
+    "@types/node": "^20.10.5",
+    "@vitejs/plugin-vue": "^5.0.2",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.32",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.8",
+    "vue-tsc": "^1.8.22"
+  }
+}
