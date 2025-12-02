@@ -131,6 +131,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { collection, doc, getDoc, onSnapshot, query, where, deleteDoc, setDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
+import { createNotification } from "@/lib/notifications";
 import PostCard from "@/components/social/PostCard.vue";
 
 type DogDoc = {
@@ -239,6 +240,16 @@ const toggleFollow = async () => {
       await deleteDoc(followerRef);
     } else {
       await setDoc(followerRef, { followedAt: new Date().toISOString() });
+      if (dog.value?.ownerId && dog.value.ownerId !== currentUserId.value) {
+        await createNotification({
+          userId: dog.value.ownerId,
+          type: "follow",
+          actorUserId: currentUserId.value || undefined,
+          actorDogId: dog.value.id,
+          actorDogName: dog.value.dogName,
+          snippet: "started following your dog.",
+        });
+      }
     }
   } catch (err) {
     console.error("Dog follow toggle failed", err);

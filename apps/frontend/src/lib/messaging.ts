@@ -1,6 +1,5 @@
 import {
   addDoc,
-  arrayUnion,
   collection,
   doc,
   getDoc,
@@ -9,12 +8,12 @@ import {
   limit,
   query,
   serverTimestamp,
-  setDoc,
   updateDoc,
   where,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Conversation } from "@/lib/types";
+import { createNotification } from "@/lib/notifications";
 
 export const getOrCreateConversation = async (currentUid: string, targetUid: string) => {
   const convCol = collection(db, "conversations");
@@ -43,7 +42,8 @@ export const sendMessage = async (
   conversationId: string,
   senderId: string,
   text: string,
-  participants?: string[]
+  participants?: string[],
+  actorDisplayName?: string
 ) => {
   const trimmed = text.trim();
   if (!trimmed) return;
@@ -74,6 +74,20 @@ export const sendMessage = async (
   });
 
   await updateDoc(doc(db, "conversations", conversationId), updatePayload);
+
+  const snippet = trimmed.slice(0, 80);
+  participantList.forEach((uid) => {
+    if (uid !== senderId) {
+      createNotification({
+        userId: uid,
+        type: "message",
+        actorUserId: senderId,
+        actorDisplayName: actorDisplayName,
+        conversationId,
+        snippet,
+      });
+    }
+  });
 };
 
 export const markConversationSeen = async (conversationId: string, viewerUid: string) => {

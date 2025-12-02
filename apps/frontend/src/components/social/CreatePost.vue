@@ -271,10 +271,11 @@ const createPost = async () => {
     });
     if (mentions.length > 0) {
       await createNotificationsForMentions(mentions, {
-        actorId: user?.uid || "",
-        actorName: user?.displayName || user?.email || "Anonymous Bhai",
-        type: "mention",
-        message: `${user?.displayName || "Someone"} mentioned you in a ${postType.value}.`,
+        actorUserId: user?.uid || "",
+        actorDisplayName: user?.displayName || user?.email || "Anonymous Bhai",
+        type: "comment",
+        snippet: `${user?.displayName || "Someone"} mentioned you in a ${postType.value}.`,
+        postId: undefined,
       });
     }
     content.value = "";

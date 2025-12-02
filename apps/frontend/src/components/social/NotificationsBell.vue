@@ -21,41 +21,42 @@
 
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from "vue";
-import { auth, db } from "@/lib/firebase";
-import { collection, onSnapshot, orderBy, query, where } from "firebase/firestore";
 import { RouterLink } from "vue-router";
+import { auth } from "@/lib/firebase";
+import { onAuthStateChanged } from "firebase/auth";
+import { subscribeToUnreadCount } from "@/lib/notifications";
 
 const unreadCount = ref(0);
 const loading = ref(true);
 let unsub: (() => void) | null = null;
+let unsubAuth: (() => void) | null = null;
+
+const listen = (uid: string) => {
+  if (unsub) unsub();
+  unsub = subscribeToUnreadCount(uid, (count) => {
+    unreadCount.value = count;
+    loading.value = false;
+  });
+};
 
 onMounted(() => {
-  const user = auth.currentUser;
-  if (!user) {
-    loading.value = false;
-    return;
-  }
-  const notificationsCol = collection(db, "notifications");
-  const q = query(
-    notificationsCol,
-    where("recipientId", "==", user.uid),
-    where("read", "==", false),
-    orderBy("createdAt", "desc")
-  );
-  unsub = onSnapshot(
-    q,
-    (snap) => {
-      unreadCount.value = snap.size;
+  unsubAuth = onAuthStateChanged(auth, (user) => {
+    if (user?.uid) {
+      loading.value = true;
+      listen(user.uid);
+    } else {
+      unreadCount.value = 0;
       loading.value = false;
-    },
-    (err) => {
-      console.error("Notifications fetch failed", err);
-      loading.value = false;
+      if (unsub) {
+        unsub();
+        unsub = null;
+      }
     }
-  );
+  });
 });
 
 onBeforeUnmount(() => {
   if (unsub) unsub();
+  if (unsubAuth) unsubAuth();
 });
 </script>

@@ -15,3 +15,21 @@ export interface ChatMessage {
   seenBy?: string[];
   imageUrl?: string;
 }
+
+export type NotificationType = "like" | "comment" | "follow" | "message" | "system";
+
+export interface NotificationDoc {
+  id: string;
+  type: NotificationType;
+  userId: string;
+  actorUserId?: string;
+  actorDogId?: string;
+  actorDisplayName?: string;
+  actorDogName?: string;
+  actorDogAvatarUrl?: string;
+  postId?: string;
+  conversationId?: string;
+  snippet?: string;
+  createdAt?: any;
+  isRead: boolean;
+}

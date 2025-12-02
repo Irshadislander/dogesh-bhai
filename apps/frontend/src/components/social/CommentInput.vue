@@ -25,10 +25,14 @@ import { useRoute, useRouter } from "vue-router";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { parseMentionsAndTags } from "@/lib/socialParsing";
-import { createNotificationsForMentions } from "@/lib/notifications";
+import { createNotification, createNotificationsForMentions } from "@/lib/notifications";
 
 const props = defineProps<{
   postId: string;
+  postAuthorId?: string;
+  postDogId?: string;
+  postDogName?: string;
+  postDogAvatarUrl?: string;
 }>();
 
 const text = ref("");
@@ -59,12 +63,26 @@ const submitComment = async () => {
       hashtags,
       createdAt: serverTimestamp(),
     });
+    if (props.postAuthorId && user?.uid && user.uid !== props.postAuthorId) {
+      await createNotification({
+        userId: props.postAuthorId,
+        type: "comment",
+        actorUserId: user.uid,
+        actorDisplayName: user.displayName || user.email || "Bhai",
+        actorDogId: props.postDogId,
+        actorDogName: props.postDogName,
+        actorDogAvatarUrl: props.postDogAvatarUrl,
+        postId: props.postId,
+        snippet: text.value.trim().slice(0, 80),
+      });
+    }
     if (mentions.length > 0) {
       await createNotificationsForMentions(mentions, {
-        actorId: user?.uid || "",
-        actorName: user?.displayName || user?.email || "Bhai",
-        type: "mention",
-        message: `${user?.displayName || "Someone"} mentioned you in a comment.`,
+        actorUserId: user?.uid || "",
+        actorDisplayName: user?.displayName || user?.email || "Bhai",
+        type: "comment",
+        snippet: `${user?.displayName || "Someone"} mentioned you in a comment.`,
+        postId: props.postId,
       });
     }
     text.value = "";

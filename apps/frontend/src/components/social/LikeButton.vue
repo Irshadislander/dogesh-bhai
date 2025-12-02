@@ -20,6 +20,9 @@ const props = defineProps<{
   postId: string;
   initialCount?: number;
   postAuthorId?: string;
+  postDogId?: string;
+  postDogName?: string;
+  postDogAvatarUrl?: string;
 }>();
 
 const count = ref(props.initialCount ?? 0);
@@ -41,11 +44,16 @@ const like = async () => {
     count.value += 1;
     const user = auth.currentUser;
     if (props.postAuthorId && user?.uid && user.uid !== props.postAuthorId) {
-      await createNotification(props.postAuthorId, {
-        actorId: user.uid,
-        actorName: user.displayName || user.email || "Someone",
+      await createNotification({
+        userId: props.postAuthorId,
         type: "like",
-        message: `${user.displayName || "Someone"} liked your post.`,
+        actorUserId: user.uid,
+        actorDisplayName: user.displayName || user.email || "Someone",
+        actorDogId: props.postDogId,
+        actorDogName: props.postDogName,
+        actorDogAvatarUrl: props.postDogAvatarUrl,
+        postId: props.postId,
+        snippet: "liked your post",
       });
     }
   } catch (err) {

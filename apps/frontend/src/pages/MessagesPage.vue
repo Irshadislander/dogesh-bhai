@@ -283,7 +283,13 @@ const handleSend = async () => {
   sending.value = true;
   sendError.value = null;
   try {
-    await sendMessage(selectedConversationId.value, currentUid.value, messageText.value, activeConversation.value?.participants);
+    await sendMessage(
+      selectedConversationId.value,
+      currentUid.value,
+      messageText.value,
+      activeConversation.value?.participants,
+      auth.currentUser?.displayName || auth.currentUser?.email || "Bhai"
+    );
     messageText.value = "";
   } catch (err) {
     console.error("Failed to send message", err);

@@ -54,6 +54,7 @@ import { ref, watch, onBeforeUnmount, computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { collection, onSnapshot, orderBy, query, addDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
+import { createNotification } from "@/lib/notifications";
 
 type ReelComment = {
   id: string;
@@ -69,6 +70,10 @@ type ReelComment = {
 const props = defineProps<{
   postId: string | null;
   open: boolean;
+  postAuthorId?: string;
+  postDogId?: string;
+  postDogName?: string;
+  postDogAvatarUrl?: string;
 }>();
 const emit = defineEmits<{
   (e: "close"): void;
@@ -136,6 +141,19 @@ const submitComment = async () => {
       authorName: user?.displayName || user?.email || "Bhai",
       createdAt: serverTimestamp(),
     });
+    if (props.postAuthorId && user?.uid && user.uid !== props.postAuthorId) {
+      await createNotification({
+        userId: props.postAuthorId,
+        type: "comment",
+        actorUserId: user.uid,
+        actorDisplayName: user.displayName || user.email || "Bhai",
+        actorDogId: props.postDogId,
+        actorDogName: props.postDogName,
+        actorDogAvatarUrl: props.postDogAvatarUrl,
+        postId: props.postId || undefined,
+        snippet: newComment.value.trim().slice(0, 80),
+      });
+    }
     newComment.value = "";
   } catch (err) {
     console.error("Failed to add comment", err);
