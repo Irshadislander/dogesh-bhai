@@ -109,8 +109,9 @@
         <button
           type="button"
           class="rounded-full bg-white/5 px-3 py-2 text-xs font-semibold text-white hover:bg-white/10"
+          @click="toggleSave"
         >
-          🔖 Save
+          {{ saved ? '🔖 Saved' : '🔖 Save' }}
         </button>
       </div>
       <span class="share-feedback text-xs text-[#9ac0ba]">{{ feedback }}</span>
@@ -129,8 +130,8 @@ import CommentList from "./CommentList.vue";
 import CommentInput from "./CommentInput.vue";
 import { RouterLink } from "vue-router";
 import { auth, db } from "@/lib/firebase";
-import { addDoc, collection, doc, increment, serverTimestamp, updateDoc } from "firebase/firestore";
-import { computed, ref } from "vue";
+import { addDoc, collection, deleteDoc, doc, getDoc, increment, onSnapshot, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 
 type FeedPost = {
@@ -159,6 +160,7 @@ const likeDelta = ref(0);
 const showHeart = ref(false);
 const expanded = ref(false);
 const likeButtonRef = ref<InstanceType<typeof LikeButton> | null>(null);
+const saved = ref(false);
 const avatarInitial = computed(() => (props.post.authorName || "B")[0]?.toUpperCase?.() || "B");
 const usernameHandle = computed(() => (props.post.authorName || "bhai").replace(/\s+/g, "").toLowerCase());
 const likeDisplay = computed(() => (props.post.likes ?? 0) + likeDelta.value);
@@ -211,6 +213,49 @@ const handleShare = async (mode: "copy" | "repost") => {
     }
   }
 };
+
+let savedUnsub: (() => void) | null = null;
+
+const watchSaved = () => {
+  if (savedUnsub) savedUnsub();
+  const user = auth.currentUser;
+  if (!user) {
+    saved.value = false;
+    return;
+  }
+  const savedDoc = doc(db, "users", user.uid, "savedPosts", props.post.id);
+  savedUnsub = onSnapshot(savedDoc, (snap) => {
+    saved.value = snap.exists();
+  });
+};
+
+const toggleSave = async () => {
+  const user = auth.currentUser;
+  if (!user) {
+    router.push({ path: "/login", query: { redirect: router.currentRoute.value.fullPath } });
+    return;
+  }
+  const savedRef = doc(db, "users", user.uid, "savedPosts", props.post.id);
+  try {
+    if (saved.value) {
+      await deleteDoc(savedRef);
+    } else {
+      await setDoc(savedRef, {
+        postId: props.post.id,
+        type: props.post.type || "post",
+        createdAt: serverTimestamp(),
+      });
+    }
+  } catch (err) {
+    console.error("Toggle save failed", err);
+  }
+};
+
+onMounted(() => watchSaved());
+
+onBeforeUnmount(() => {
+  if (savedUnsub) savedUnsub();
+});
 
 const triggerLike = async () => {
   if (likeButtonRef.value?.like) {

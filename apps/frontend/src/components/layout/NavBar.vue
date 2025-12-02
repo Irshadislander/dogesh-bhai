@@ -32,6 +32,7 @@
             {{ totalUnread > 9 ? '9+' : totalUnread }}
           </span>
         </RouterLink>
+        <RouterLink v-if="currentUser" class="hover:text-yellow-400 transition" to="/saved">Saved</RouterLink>
         <form class="relative" @submit.prevent="handleSubmit">
           <input
             v-model="searchQuery"
@@ -83,6 +84,7 @@ let unsub: (() => void) | null = null;
 let unsubAuth: (() => void) | null = null;
 const searchQuery = ref("");
 const router = useRouter();
+const currentUser = ref(auth.currentUser);
 
 const listenUnread = (uid: string) => {
   if (unsub) {
@@ -112,12 +114,14 @@ const listenUnread = (uid: string) => {
 unsubAuth = onAuthStateChanged(auth, (user) => {
   if (user?.uid) {
     listenUnread(user.uid);
+    currentUser.value = user;
   } else {
     totalUnread.value = 0;
     if (unsub) {
       unsub();
       unsub = null;
     }
+    currentUser.value = null;
   }
 });
 

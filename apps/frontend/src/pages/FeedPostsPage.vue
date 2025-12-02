@@ -9,7 +9,26 @@
 
     <section class="py-10">
       <div class="mx-auto flex max-w-3xl flex-col gap-6 px-4 sm:px-6">
-        <TrendingHashtags post-type="post" />
+        <div class="flex items-center justify-between">
+          <div class="flex gap-2 rounded-full bg-white/70 p-1 text-sm font-semibold text-[#1F130A] ring-1 ring-slate-200">
+            <button
+              class="rounded-full px-4 py-2 transition"
+              :class="activeTab === 'foryou' ? 'bg-[#F6A623] text-[#241A0E]' : ''"
+              @click="setTab('foryou')"
+            >
+              For You
+            </button>
+            <button
+              class="rounded-full px-4 py-2 transition"
+              :class="activeTab === 'following' ? 'bg-[#F6A623] text-[#241A0E]' : ''"
+              @click="setTab('following')"
+              :disabled="!isLoggedIn"
+            >
+              Following
+            </button>
+          </div>
+          <TrendingHashtags post-type="post" />
+        </div>
         <div ref="createRef">
           <CreatePost @created="handleCreated" />
         </div>
@@ -38,7 +57,10 @@
           v-else-if="posts.length === 0"
           class="rounded-3xl bg-white p-6 text-center text-sm text-slate-600 ring-1 ring-slate-200"
         >
-          No posts yet — follow more dogs or create your first post.
+          <template v-if="activeTab === 'following'">
+            Follow a few humans or dogs to see their Bhai posts here.
+          </template>
+          <template v-else>No posts yet — follow more dogs or create your first post.</template>
         </div>
 
         <div v-else class="space-y-4">
@@ -58,9 +80,9 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from "vue";
-import { collection, onSnapshot, orderBy, query, where } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { collection, getDocs, onSnapshot, orderBy, query, where } from "firebase/firestore";
+import { auth, db } from "@/lib/firebase";
 import CreatePost from "@/components/social/CreatePost.vue";
 import PostCard from "@/components/social/PostCard.vue";
 import TrendingHashtags from "@/components/social/TrendingHashtags.vue";
@@ -81,29 +103,91 @@ const loading = ref(true);
 const errorMessage = ref<string | null>(null);
 let unsub: (() => void) | null = null;
 const createRef = ref<HTMLElement | null>(null);
+const activeTab = ref<"foryou" | "following">("foryou");
+const followedUserIds = ref<string[]>([]);
+const followedDogIds = ref<string[]>([]);
+const isLoggedIn = computed(() => !!auth.currentUser);
 
-onMounted(() => {
-  window.scrollTo({ top: 0, behavior: "smooth" });
+const loadForYou = () => {
+  if (unsub) unsub();
+  loading.value = true;
+  const postsCol = collection(db, "posts");
+  const qPosts = query(postsCol, where("type", "==", "post"), orderBy("createdAt", "desc"));
+  unsub = onSnapshot(
+    qPosts,
+    (snapshot) => {
+      posts.value = snapshot.docs.map((doc) => ({ id: doc.id, ...(doc.data() as any) }));
+      loading.value = false;
+    },
+    (err) => {
+      console.error("Failed to load posts", err);
+      errorMessage.value = "Failed to load feed.";
+      loading.value = false;
+    }
+  );
+};
+
+const loadFollowing = async () => {
+  if (!auth.currentUser) {
+    activeTab.value = "foryou";
+    return;
+  }
+  if (unsub) unsub();
+  loading.value = true;
   try {
+    // get followed users
+    const followingSnap = await getDocs(collection(db, "users", auth.currentUser.uid, "following"));
+    followedUserIds.value = followingSnap.docs.map((d) => d.id).slice(0, 20);
+    // get dogs for these users
+    const dogPromises = followedUserIds.value.map((uid) =>
+      getDocs(query(collection(db, "dogs"), where("ownerId", "==", uid)))
+    );
+    const dogSnaps = await Promise.all(dogPromises);
+    const dogIds: string[] = [];
+    dogSnaps.forEach((snap) => {
+      snap.docs.forEach((d) => dogIds.push(d.id));
+    });
+    followedDogIds.value = dogIds;
+
     const postsCol = collection(db, "posts");
-    const q = query(postsCol, where("type", "==", "post"), orderBy("createdAt", "desc"));
+    const qPosts = query(postsCol, where("type", "==", "post"), orderBy("createdAt", "desc"));
     unsub = onSnapshot(
-      q,
+      qPosts,
       (snapshot) => {
-        posts.value = snapshot.docs.map((doc) => ({ id: doc.id, ...(doc.data() as any) }));
+        const all = snapshot.docs.map((doc) => ({ id: doc.id, ...(doc.data() as any) }));
+        posts.value = all.filter((p) => followedDogIds.value.includes(p.dogId));
         loading.value = false;
       },
       (err) => {
-        console.error("Failed to load posts", err);
+        console.error("Failed to load following posts", err);
         errorMessage.value = "Failed to load feed.";
         loading.value = false;
       }
     );
   } catch (err) {
-    console.error("Failed to load posts", err);
+    console.error("Failed to load following posts", err);
     errorMessage.value = "Failed to load feed.";
     loading.value = false;
   }
+};
+
+const setTab = (tab: "foryou" | "following") => {
+  activeTab.value = tab;
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  if (tab === "foryou") {
+    loadForYou();
+  } else {
+    if (!auth.currentUser) {
+      activeTab.value = "foryou";
+      return;
+    }
+    loadFollowing();
+  }
+};
+
+onMounted(() => {
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  loadForYou();
 });
 
 onBeforeUnmount(() => {

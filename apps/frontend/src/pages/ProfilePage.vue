@@ -27,8 +27,10 @@
               class="h-20 w-20 rounded-full object-cover ring-2 ring-[#F6A623]"
             />
             <div>
-              <p class="text-2xl font-semibold text-[#1F130A]">{{ userData.username || 'Bhai User' }}</p>
-              <p class="text-sm text-[#5A4634]">Joined: {{ userData.joinedDate || '—' }}</p>
+              <p class="text-2xl font-semibold text-[#1F130A]">{{ userData.fullName || userData.username || 'Bhai User' }}</p>
+              <p class="text-sm text-[#5A4634]">
+                <span v-if="userData.city">{{ userData.city }} • </span>Joined: {{ userData.joinedDate || '—' }}
+              </p>
             </div>
             <div v-if="userData.bio" class="rounded-2xl bg-[#F8E4C7] p-4 text-sm text-[#413530]">
               {{ userData.bio }}
@@ -59,7 +61,15 @@
               Join challenges to earn your first badge.
             </div>
 
-            <div v-if="!isOwnProfile" class="flex gap-3">
+            <div v-if="isOwnProfile" class="flex gap-3">
+              <button
+                type="button"
+                class="rounded-xl bg-[#F6A623] px-4 py-2 text-sm font-semibold text-[#241A0E] shadow transition hover:shadow-lg"
+              >
+                Edit profile
+              </button>
+            </div>
+            <div v-else class="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
               <button
                 type="button"
                 :disabled="followLoading"
@@ -125,12 +135,15 @@ import PostCard from "@/components/social/PostCard.vue";
 import heroMain from "@/assets/Dogeshbhai/hero-main.png";
 import SendMessage from "@/components/social/SendMessage.vue";
 import { badges } from "@/lib/badges";
+import { followUser, unfollowUser, subscribeToUserFollowers, subscribeToUserFollowing } from "@/lib/follow";
 
 type UserDoc = {
   avatar?: string;
+  fullName?: string;
   username?: string;
   joinedDate?: string;
   bio?: string;
+  city?: string;
 };
 
 type FeedPost = {
@@ -194,14 +207,18 @@ onMounted(async () => {
     });
 
     // Followers listener
-    followersUnsub = onSnapshot(collection(db, "users", userId, "followers"), (snapshot) => {
-      followerCount.value = snapshot.size;
-      isFollowing.value = !!snapshot.docs.find((d) => d.id === currentUserId.value);
-    });
+    followersUnsub = subscribeToUserFollowers(
+      userId,
+      (count, following) => {
+        followerCount.value = count;
+        isFollowing.value = following;
+      },
+      currentUserId.value || undefined
+    );
 
     // Following count for profile owner
-    followingUnsub = onSnapshot(collection(db, "users", userId, "following"), (snapshot) => {
-      followingCount.value = snapshot.size;
+    followingUnsub = subscribeToUserFollowing(userId, (count) => {
+      followingCount.value = count;
     });
   } catch (err) {
     console.error("Failed to load profile", err);
@@ -226,14 +243,10 @@ const toggleFollow = async () => {
   const targetId = userDataId.value;
   const me = currentUserId.value;
   try {
-    const followerRef = doc(db, "users", targetId, "followers", me);
-    const followingRef = doc(db, "users", me, "following", targetId);
     if (isFollowing.value) {
-      await deleteDoc(followerRef);
-      await deleteDoc(followingRef);
+      await unfollowUser(me, targetId);
     } else {
-      await setDoc(followerRef, { followerId: me, followedAt: new Date().toISOString() });
-      await setDoc(followingRef, { followingId: targetId, followedAt: new Date().toISOString() });
+      await followUser(me, targetId);
     }
   } catch (err) {
     console.error("Failed to toggle follow", err);
