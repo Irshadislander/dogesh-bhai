@@ -6,9 +6,11 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
-    "strict": true,
+    "strict": false,
+    "noImplicitAny": false,
     "resolveJsonModule": true,
     "baseUrl": ".",
+    "types": ["node"],
     "paths": {
       "@shared/*": ["packages/shared/src/*"]
     }

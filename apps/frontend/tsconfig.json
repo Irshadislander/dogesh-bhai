@@ -5,11 +5,12 @@
     "module": "ESNext",
     "moduleResolution": "Node",
     "jsx": "preserve",
-    "types": ["vite/client"],
+    "types": ["vite/client", "node"],
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
-      "@shared/*": ["../../packages/shared/src/*"]
+      "@shared/*": ["../../packages/shared/src/*"],
+      "vite/client": ["./node_modules/vite/client.d.ts"]
     }
   },
   "include": ["src/**/*", "env.d.ts"],

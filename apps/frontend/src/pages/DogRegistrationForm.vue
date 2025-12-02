@@ -1,132 +1,213 @@
 <template>
-  <section class="max-w-2xl space-y-4">
-    <div>
-      <p class="text-sm uppercase tracking-wide text-slate-500">Register</p>
-      <h2 class="text-3xl font-bold text-slate-900">Create a dog profile</h2>
-      <p class="text-sm text-slate-600">
-        Use this form to register your pup and keep their details synced with the community backend.
-      </p>
-    </div>
-
-    <el-form
-      :model="form"
-      label-position="top"
-      class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200"
-      @submit.prevent="handleSubmit"
-    >
-      <div class="grid gap-4 md:grid-cols-2">
-        <el-form-item label="Dog name" required>
-          <el-input v-model="form.name" placeholder="Milo" />
-        </el-form-item>
-
-        <el-form-item label="Owner ID" required>
-          <el-input v-model="form.ownerId" placeholder="firebase-uid" />
-        </el-form-item>
-
-        <el-form-item label="Breed">
-          <el-input v-model="form.breed" placeholder="Border Collie" />
-        </el-form-item>
-
-        <el-form-item label="Age">
-          <el-input v-model.number="form.age" type="number" min="0" />
-        </el-form-item>
+  <main class="min-h-screen bg-[#FFF7EC]">
+    <section class="bg-[#04343A] text-white">
+      <div class="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-10 md:flex-row md:items-center">
+        <div class="flex-1 space-y-3">
+          <h1 class="text-3xl font-semibold md:text-4xl">Join the Bhaihood</h1>
+          <p class="text-sm text-[#FFE8C7] md:text-base">
+            Register your dog, pick their Bhai fit, and get them ready for the digital brotherhood.
+          </p>
+        </div>
+        <div class="hidden flex-1 md:block">
+          <div class="overflow-hidden rounded-3xl bg-[#021D25] shadow-lg">
+            <img :src="trioTall" alt="Dogesh Bhai pack" class="h-full w-full object-cover" />
+          </div>
+        </div>
       </div>
+    </section>
 
-      <el-form-item label="Bio">
-        <el-input
-          v-model="form.bio"
-          type="textarea"
-          :autosize="{ minRows: 3, maxRows: 5 }"
-        />
-      </el-form-item>
+    <section class="py-10">
+      <div class="mx-auto grid max-w-6xl items-start gap-10 px-6 lg:grid-cols-[1.1fr,0.9fr]">
+        <div class="space-y-6 rounded-3xl bg-white p-6 shadow-lg md:p-8">
+          <div>
+            <label class="block text-sm font-semibold text-[#1F130A]">Owner name</label>
+            <input
+              v-model="form.ownerName"
+              type="text"
+              class="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#F6A623] focus:ring-1 focus:ring-[#F6A623]"
+              placeholder="Your name"
+            />
+          </div>
 
-      <el-form-item label="Tags (comma separated)">
-        <el-input v-model="tags" placeholder="playful, friendly" />
-      </el-form-item>
+          <div>
+            <label class="block text-sm font-semibold text-[#1F130A]">Owner email</label>
+            <input
+              v-model="form.ownerEmail"
+              type="email"
+              class="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#F6A623] focus:ring-1 focus:ring-[#F6A623]"
+              placeholder="you@bhaihood.com"
+            />
+          </div>
 
-      <div class="flex items-center gap-3">
-        <el-button type="primary" :loading="submitting" @click="handleSubmit">
-          Save profile
-        </el-button>
-        <p v-if="error" class="text-sm text-rose-600">
-          {{ error }}
-        </p>
+          <div>
+            <label class="block text-sm font-semibold text-[#1F130A]">Dog's name</label>
+            <input
+              v-model="form.dogName"
+              type="text"
+              class="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#F6A623] focus:ring-1 focus:ring-[#F6A623]"
+              placeholder="Milo, Luna, Bruno..."
+            />
+          </div>
+
+          <div>
+            <label class="block text-sm font-semibold text-[#1F130A]">Breed</label>
+            <select
+              v-model="form.breed"
+              class="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-[#1F130A] outline-none focus:border-[#F6A623] focus:ring-1 focus:ring-[#F6A623]"
+            >
+              <option value="">Select a breed</option>
+              <option>Mixed Bhai</option>
+              <option>Golden Retriever</option>
+              <option>German Shepherd</option>
+              <option>French Bulldog</option>
+              <option>Labrador</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-semibold text-[#1F130A]">Personality</label>
+            <textarea
+              v-model="form.personality"
+              rows="4"
+              class="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#F6A623] focus:ring-1 focus:ring-[#F6A623]"
+              placeholder="Describe your dog's vibe"
+            ></textarea>
+          </div>
+
+          <div>
+            <p class="text-sm font-semibold text-[#1F130A]">Outfit choice</p>
+            <div class="mt-3 flex flex-wrap gap-3">
+              <button
+                v-for="option in outfits"
+                :key="option"
+                type="button"
+                @click="form.outfit = option"
+                class="rounded-full px-4 py-2 text-sm font-semibold transition"
+                :class="form.outfit === option ? 'bg-[#F6A623] text-[#241A0E] shadow' : 'bg-slate-100 text-[#1F130A]'"
+              >
+                {{ option }}
+              </button>
+            </div>
+          </div>
+
+          <div class="flex items-start gap-3">
+            <input
+              v-model="form.acceptsTerms"
+              type="checkbox"
+              id="agree"
+              class="mt-1 h-4 w-4 rounded border-slate-300 text-[#F6A623] focus:ring-[#F6A623]"
+            />
+            <label for="agree" class="text-sm text-[#1F130A]">
+              I agree that my dog is ready to become a certified Bhai.
+            </label>
+          </div>
+
+          <button
+            type="button"
+            @click="saveBhaiProfile"
+            :disabled="saving"
+            class="w-full rounded-xl bg-[#F6A623] px-4 py-3 text-sm font-semibold text-[#241A0E] shadow transition hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {{ saving ? "Saving…" : "Save Bhai Profile" }}
+          </button>
+          <p v-if="saveError" class="text-sm text-red-600">{{ saveError }}</p>
+          <p v-if="saveSuccess" class="text-sm text-emerald-700">
+            Bhai profile saved! Your dog is now one step closer to the Bhaihood.
+          </p>
+        </div>
+
+        <div class="space-y-4 rounded-3xl bg-[#04343A] p-6 text-white shadow-lg md:p-8">
+          <p class="text-sm text-[#FFE8C7]">Preview</p>
+          <div class="flex items-center gap-4 rounded-2xl bg-[#021D25] p-4">
+            <img :src="previewImage" alt="Bhai avatar" class="h-16 w-16 rounded-2xl object-cover" />
+            <div>
+              <p class="text-lg font-semibold">{{ form.dogName || "Your Dog" }}</p>
+              <p class="text-sm text-[#BFD8D6]">{{ form.breed || "Select a breed" }}</p>
+            </div>
+          </div>
+          <div class="rounded-2xl bg-white/5 p-4 text-sm">
+            <p class="font-semibold">Personality</p>
+            <p class="mt-1 text-[#D8E8E6]">
+              {{ form.personality || "Describe your dog's vibe to show in their Bhai card." }}
+            </p>
+          </div>
+          <div class="flex items-center gap-2 rounded-full bg-white/10 px-3 py-2 text-xs font-semibold text-[#FFE8C7]">
+            <span class="h-2 w-2 rounded-full bg-amber-400"></span>
+            Pending Bhaihood approval
+          </div>
+        </div>
       </div>
-    </el-form>
-  </section>
+    </section>
+  </main>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from "vue";
-import { useRouter } from "vue-router";
-import { ElMessage } from "element-plus";
-
-import type { DogProfile } from "@visway/shared";
-import { validateDogProfile } from "@visway/shared";
-
-import { db } from "@/lib/firebase";
+import { computed, reactive, ref } from "vue";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import heroMain from "@/assets/Dogeshbhai/hero-main.png";
+import trioTall from "@/assets/Dogeshbhai/trio-tall.png";
+import singleDogChain from "@/assets/Dogeshbhai/single-dog-chain.png";
+import singleDogHoodie from "@/assets/Dogeshbhai/single-dog-hoodie.png";
+import { auth, db } from "@/lib/firebase";
 
-const router = useRouter();
-const error = ref<string | null>(null);
-const submitting = ref(false);
-const tags = ref("");
-
-// local form state
-const form = reactive<Partial<DogProfile>>({
-  name: "",
-  ownerId: "",
+const form = reactive({
+  ownerName: "",
+  ownerEmail: "",
+  dogName: "",
   breed: "",
-  age: undefined,
-  bio: "",
-  avatarUrl: "",
+  personality: "",
+  outfit: "Hoodie",
+  acceptsTerms: false,
 });
 
-const handleSubmit = async () => {
-  error.value = null;
+const outfits = ["Hoodie", "Chain", "Full Drip"];
 
-  // build payload including tags[]
-  const payload: Partial<DogProfile> = {
-    ...form,
-    tags: tags.value
-      .split(",")
-      .map((tag) => tag.trim())
-      .filter(Boolean),
-  };
+const saving = ref(false);
+const saveError = ref<string | null>(null);
+const saveSuccess = ref(false);
 
-  // run shared validator
-  const validation = validateDogProfile(payload);
-  if (!validation.valid) {
-    error.value = validation.errors.join(", ");
+const previewImage = computed(() => {
+  if (form.outfit === "Chain") return singleDogChain;
+  if (form.outfit === "Full Drip") return heroMain;
+  return singleDogHoodie;
+});
+
+const saveBhaiProfile = async () => {
+  saveError.value = null;
+  saveSuccess.value = false;
+
+  if (!form.ownerName || !form.ownerEmail || !form.dogName || !form.breed || !form.outfit) {
+    saveError.value = "Please fill all required fields.";
     return;
   }
 
-  submitting.value = true;
+  if (!form.acceptsTerms) {
+    saveError.value = "Please confirm your dog is ready to become a Bhai.";
+    return;
+  }
 
+  saving.value = true;
   try {
-    // prepare Firestore-safe data
-    const dataToSave = {
-      name: payload.name ?? "",
-      ownerId: payload.ownerId ?? "",
-      breed: payload.breed ?? "",
-      age: payload.age ?? null,
-      bio: payload.bio ?? "",
-      avatarUrl: payload.avatarUrl ?? "",
-      tags: (payload.tags as string[]) ?? [],
-      createdAt: serverTimestamp(),
-    };
-
     const dogsCol = collection(db, "dogs");
-    const docRef = await addDoc(dogsCol, dataToSave);
+    await addDoc(dogsCol, {
+      ownerId: auth.currentUser?.uid || "",
+      ownerName: form.ownerName,
+      ownerEmail: form.ownerEmail,
+      dogName: form.dogName,
+      breed: form.breed,
+      personality: form.personality || "",
+      outfit: form.outfit,
+      city: (form as any).city || "",
+      avatarImageUrl: (form as any).avatarUrl || "",
+      createdAt: serverTimestamp(),
+    });
 
-    ElMessage.success("Dog profile saved");
-    // navigate to dog profile page using new doc id
-    router.push(`/dogs/${docRef.id}`);
+    saveSuccess.value = true;
   } catch (err) {
-    console.error(err);
-    error.value = "Failed to save dog profile";
+    console.error("Failed to save dog profile", err);
+    saveError.value = "Could not save your Bhai profile. Please try again.";
   } finally {
-    submitting.value = false;
+    saving.value = false;
   }
 };
 </script>

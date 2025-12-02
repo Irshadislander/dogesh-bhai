@@ -31,7 +31,7 @@ if (typeof window !== "undefined") {
 // Firebase Services
 // --------------------------------------
 const auth = getAuth(app);
-const firebaseAuth = auth;   // 👈 FIX for your error
+const firebaseAuth = auth; // keep named alias for existing imports
 const db = getFirestore(app);
 const storage = getStorage(app);
 

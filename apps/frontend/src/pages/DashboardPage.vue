@@ -1,85 +1,158 @@
 <template>
-  <section class="space-y-6">
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      <div>
-        <p class="text-sm uppercase tracking-wide text-slate-500">Dashboard</p>
-        <h2 class="text-3xl font-bold text-slate-900">Your dogs and community at a glance</h2>
+  <main class="min-h-screen bg-[#FFF7EC] text-[#1F130A]">
+    <section class="border-b border-white/10 bg-[#04343A] text-white">
+      <div class="mx-auto max-w-6xl px-6 py-10 space-y-3">
+        <h1 class="text-3xl font-semibold md:text-4xl">Bhai Dashboard</h1>
+        <p class="max-w-2xl text-sm text-[#FFE8C7] md:text-base">
+          See who has officially joined the Bhaihood. These are the registered dog profiles from the community.
+        </p>
       </div>
-      <router-link to="/dogs/register">
-        <el-button type="primary">Register another dog</el-button>
-      </router-link>
-    </div>
+    </section>
 
-    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-        <p class="text-sm text-slate-500">Registered dogs</p>
-        <p class="mt-2 text-3xl font-semibold text-slate-900">{{ dogs.length }}</p>
-      </div>
-      <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-        <p class="text-sm text-slate-500">Community posts</p>
-        <p class="mt-2 text-3xl font-semibold text-slate-900">{{ posts.length }}</p>
-      </div>
-      <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-        <p class="text-sm text-slate-500">Last sync</p>
-        <p class="mt-2 text-3xl font-semibold text-slate-900">{{ lastUpdated }}</p>
-      </div>
-    </div>
-
-    <div class="grid gap-6 lg:grid-cols-2">
-      <div class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-        <div class="flex items-center justify-between">
-          <h3 class="text-lg font-semibold text-slate-900">Recent dogs</h3>
-          <router-link class="text-sm text-brand-blue" to="/dogs/register">Add new</router-link>
+    <section class="py-10">
+      <div class="mx-auto max-w-6xl px-6">
+        <div v-if="loading" class="py-10 text-center text-sm text-slate-600">
+          Loading Bhai profiles…
         </div>
-        <ul class="mt-4 divide-y divide-slate-100">
-          <li v-for="dog in dogs" :key="dog.id" class="py-3">
-            <router-link :to="`/dogs/${dog.id}`" class="flex items-center justify-between">
-              <div>
-                <p class="font-semibold text-slate-900">{{ dog.name }}</p>
-                <p class="text-sm text-slate-600">{{ dog.breed || "Unknown breed" }}</p>
+
+        <div v-else-if="errorMessage" class="py-10 text-center text-sm text-red-600">
+          {{ errorMessage }}
+        </div>
+
+        <div v-else-if="dogs.length === 0" class="py-10 text-center text-sm text-slate-600">
+          No Bhai profiles yet. Be the first to register your dog from the <span class="font-semibold">Join the Bhaihood</span> page.
+        </div>
+
+        <div v-else class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <article
+            v-for="dog in dogs"
+            :key="dog.id"
+            class="group overflow-hidden rounded-3xl bg-[#F8E4C7] shadow transition hover:-translate-y-1 hover:shadow-xl"
+          >
+            <div class="relative aspect-[4/3] overflow-hidden">
+              <img
+                :src="getAvatarForOutfit(dog.outfit)"
+                :alt="dog.dogName"
+                class="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+              />
+              <div class="absolute left-3 top-3 rounded-full bg-black/70 px-3 py-1 text-xs text-white">
+                {{ dog.outfit || "bhai" }}
               </div>
-              <span class="text-xs text-slate-500">{{ dog.age ? dog.age + ' yrs' : 'Age n/a' }}</span>
-            </router-link>
-          </li>
-          <li v-if="dogs.length === 0" class="py-3 text-sm text-slate-600">No dogs yet. Register your first pup!</li>
-        </ul>
-      </div>
-      <div class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-        <div class="flex items-center justify-between">
-          <h3 class="text-lg font-semibold text-slate-900">Community feed</h3>
-          <router-link class="text-sm text-brand-blue" to="/community">Open feed</router-link>
-        </div>
-        <ul class="mt-4 space-y-3">
-          <li v-for="post in posts" :key="post.id" class="rounded-lg border border-slate-100 p-3">
-            <p class="text-sm text-slate-600">{{ post.authorId }}</p>
-            <p class="mt-1 font-medium text-slate-900">{{ post.content }}</p>
-            <div class="mt-2 flex items-center gap-3 text-xs text-slate-500">
-              <span>{{ new Date(post.createdAt).toLocaleString() }}</span>
-              <span class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-1">❤️ {{ post.likes || 0 }}</span>
             </div>
-          </li>
-          <li v-if="posts.length === 0" class="text-sm text-slate-600">No posts yet. Be the first to share!</li>
-        </ul>
+
+            <div class="space-y-2 p-4">
+              <div class="flex items-baseline justify-between gap-2">
+                <h2 class="text-lg font-semibold text-[#1F130A]">
+                  {{ dog.dogName || "Unnamed Bhai" }}
+                </h2>
+                <span class="text-xs text-[#5A4634]">
+                  {{ formatDate(dog.createdAt) }}
+                </span>
+              </div>
+
+              <p class="text-xs font-medium uppercase tracking-wide text-[#8A6A4A]">
+                {{ dog.breed || "Mystery breed" }}
+              </p>
+
+              <p v-if="dog.personality" class="text-sm text-[#413530] line-clamp-2">
+                {{ dog.personality }}
+              </p>
+
+              <p class="mt-2 text-xs text-[#5A4634]">
+                Owner: <span class="font-medium">{{ dog.ownerName || "Unknown" }}</span>
+                <span v-if="dog.ownerEmail" class="block text-[10px] md:inline md:ml-1">
+                  ({{ dog.ownerEmail }})
+                </span>
+              </p>
+            </div>
+          </article>
+        </div>
       </div>
-    </div>
-  </section>
+    </section>
+  </main>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, computed } from "vue";
-import { fetchCommunityPosts, fetchDogs } from "@/lib/api";
-import type { DogProfile, CommunityPost } from "@visway/shared";
+import { onBeforeUnmount, onMounted, ref } from "vue";
+import { db } from "@/lib/firebase";
+import { collection, onSnapshot, orderBy, query, Timestamp } from "firebase/firestore";
+import heroMain from "@/assets/Dogeshbhai/hero-main.png";
+import singleDogChain from "@/assets/Dogeshbhai/single-dog-chain.png";
+import singleDogHoodie from "@/assets/Dogeshbhai/single-dog-hoodie.png";
 
-const dogs = ref<DogProfile[]>([]);
-const posts = ref<CommunityPost[]>([]);
-const lastUpdated = computed(() => new Date().toLocaleTimeString());
+type DogDoc = {
+  id: string;
+  ownerName: string;
+  ownerEmail: string;
+  dogName: string;
+  breed: string;
+  personality?: string;
+  outfit?: "hoodie" | "chain" | "full" | string;
+  createdAt?: any;
+};
 
-onMounted(async () => {
+const dogs = ref<DogDoc[]>([]);
+const loading = ref(true);
+const errorMessage = ref<string | null>(null);
+
+let unsubscribe: (() => void) | null = null;
+
+onMounted(() => {
   try {
-    dogs.value = await fetchDogs();
-    posts.value = await fetchCommunityPosts();
-  } catch (error) {
-    console.error(error);
+    const dogsCol = collection(db, "dogs");
+    const q = query(dogsCol, orderBy("createdAt", "desc"));
+
+    unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const items: DogDoc[] = snapshot.docs.map((doc) => {
+          const data = doc.data() as any;
+          return {
+            id: doc.id,
+            ownerName: data.ownerName ?? "",
+            ownerEmail: data.ownerEmail ?? "",
+            dogName: data.dogName ?? "",
+            breed: data.breed ?? "",
+            personality: data.personality ?? "",
+            outfit: data.outfit ?? "",
+            createdAt: data.createdAt ?? null,
+          };
+        });
+
+        dogs.value = items;
+        loading.value = false;
+      },
+      (err) => {
+        console.error("Error loading dogs:", err);
+        errorMessage.value = "Failed to load Bhai profiles.";
+        loading.value = false;
+      }
+    );
+  } catch (err) {
+    console.error(err);
+    errorMessage.value = "Failed to load Bhai profiles.";
+    loading.value = false;
   }
 });
+
+onBeforeUnmount(() => {
+  if (unsubscribe) unsubscribe();
+});
+
+const getAvatarForOutfit = (outfit?: string) => {
+  if (!outfit) return heroMain;
+  const lower = outfit.toLowerCase();
+
+  if (lower.includes("hoodie")) return singleDogHoodie;
+  if (lower.includes("chain")) return singleDogChain;
+  if (lower.includes("full")) return heroMain;
+
+  return heroMain;
+};
+
+const formatDate = (ts?: any) => {
+  if (!ts || typeof ts.toDate !== "function") return "";
+  const date = ts.toDate();
+  return date.toLocaleString();
+};
 </script>
