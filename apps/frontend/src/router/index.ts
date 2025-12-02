@@ -17,8 +17,11 @@ import MessagesPage from "@/pages/MessagesPage.vue";
 import NotificationsPage from "@/pages/NotificationsPage.vue";
 import HashtagExplorePage from "@/pages/HashtagExplorePage.vue";
 import HashtagPage from "@/pages/HashtagPage.vue";
-import { auth } from "@/lib/firebase";
+import VerifyEmailPage from "@/pages/VerifyEmailPage.vue";
+import DogRegistrationIntro from "@/pages/DogRegistrationIntro.vue";
+import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
+import { collection, getDocs, limit, query, where } from "firebase/firestore";
 
 const router = createRouter({
   history: createWebHistory(),
@@ -27,8 +30,16 @@ const router = createRouter({
     { path: "/login", name: "login", component: LoginPage },
     { path: "/signup", name: "Signup", component: SignupPage },
     { path: "/dashboard", name: "dashboard", component: DashboardPage, meta: { requiresAuth: true } },
-    { path: "/register", name: "register", component: DogRegistrationForm },
-    { path: "/dogs/register", name: "dog-register", component: DogRegistrationForm },
+    { path: "/verify-email", name: "verify-email", component: VerifyEmailPage, meta: { requiresAuth: true } },
+    { path: "/register-dog", name: "register-dog", component: DogRegistrationIntro, meta: { requiresAuth: true } },
+    {
+      path: "/register-dog/form",
+      name: "register-dog-form",
+      component: DogRegistrationForm,
+      meta: { requiresAuth: true },
+    },
+    { path: "/register", redirect: "/register-dog" },
+    { path: "/dogs/register", redirect: "/register-dog" },
     { path: "/dogs/:id", name: "dog-profile", component: DogProfilePage, props: true },
     { path: "/community", name: "community", component: CommunityPage },
     { path: "/feed", name: "feed", component: FeedPage },
@@ -51,12 +62,51 @@ const router = createRouter({
   ],
 });
 
-router.beforeEach((to, _from, next) => {
+const dogCache = new Map<string, boolean>();
+
+const getCurrentUser = () =>
+  new Promise((resolve) => {
+    if (auth.currentUser) {
+      resolve(auth.currentUser);
+      return;
+    }
+    const unsub = onAuthStateChanged(auth, (user) => {
+      unsub();
+      resolve(user);
+    });
+  });
+
+const userHasDog = async (uid: string) => {
+  if (dogCache.has(uid)) return dogCache.get(uid) as boolean;
+  const q = query(collection(db, "dogs"), where("ownerId", "==", uid), limit(1));
+  const snap = await getDocs(q);
+  const hasDog = !snap.empty;
+  dogCache.set(uid, hasDog);
+  return hasDog;
+};
+
+router.beforeEach(async (to, _from, next) => {
   const requiresAuth = to.matched.some((record) => record.meta?.requiresAuth);
-  const user = auth.currentUser;
+  const user = (await getCurrentUser()) as any;
+
   if (requiresAuth && !user) {
     return next({ path: "/login", query: { redirect: to.fullPath } });
   }
+
+  if (user) {
+    if (!user.emailVerified && to.path !== "/verify-email") {
+      return next({ path: "/verify-email" });
+    }
+
+    const allowDogless = ["/register-dog", "/register-dog/form", "/verify-email"];
+    if (user.emailVerified && !allowDogless.includes(to.path)) {
+      const hasDog = await userHasDog(user.uid);
+      if (!hasDog) {
+        return next({ path: "/register-dog" });
+      }
+    }
+  }
+
   return next();
 });
 

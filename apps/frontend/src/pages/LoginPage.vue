@@ -53,7 +53,7 @@
 
 <script setup lang="ts">
 import { ref } from "vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 
@@ -62,6 +62,7 @@ const password = ref("");
 const loading = ref(false);
 const errorMessage = ref<string | null>(null);
 const router = useRouter();
+const route = useRoute();
 
 const onSubmit = async () => {
   errorMessage.value = null;
@@ -75,7 +76,8 @@ const onSubmit = async () => {
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email.value, password.value);
     console.log("Logged in as", userCredential.user.uid);
-    await router.push("/");
+    const redirect = (route.query.redirect as string) || "/";
+    await router.push(redirect);
   } catch (err: any) {
     console.error("Login error", err);
     if (err.code === "auth/user-not-found" || err.code === "auth/wrong-password") {

@@ -173,8 +173,8 @@ const handleFileChange = async (e: Event) => {
       const videoEl = document.createElement("video");
       const duration: number = await new Promise((resolve, reject) => {
         videoEl.preload = "metadata";
-        videoEl.onloadedmetadata = () => resolve(videoEl.duration);
-        videoEl.onerror = () => reject("Video load error");
+        videoEl.onloadedmetadata = (_ev: Event) => resolve(videoEl.duration);
+        videoEl.onerror = (_ev: Event) => reject("Video load error");
         videoEl.src = objectUrl;
       });
       durationSeconds.value = duration;
@@ -187,7 +187,7 @@ const handleFileChange = async (e: Event) => {
       }
       await new Promise<void>((resolve) => {
         videoEl.currentTime = 0.1;
-        videoEl.onseeked = () => resolve();
+        videoEl.onseeked = (_ev: Event) => resolve();
       });
       const canvas = document.createElement("canvas");
       canvas.width = videoEl.videoWidth;

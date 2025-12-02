@@ -17,13 +17,21 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
-      <nav class="hidden items-center gap-6 text-sm font-medium text-white md:flex">
+<nav class="hidden items-center gap-6 text-sm font-medium text-white md:flex">
         <RouterLink class="hover:text-yellow-400 transition" to="/">Home</RouterLink>
         <RouterLink class="hover:text-yellow-400 transition" to="/feed/posts">Feed Posts</RouterLink>
         <RouterLink class="hover:text-yellow-400 transition" to="/feed/reels">Feed Reels</RouterLink>
         <RouterLink class="hover:text-yellow-400 transition" to="/dashboard">Dashboard</RouterLink>
         <RouterLink class="hover:text-yellow-400 transition" to="/community">Community</RouterLink>
-        <RouterLink class="hover:text-yellow-400 transition" to="/messages">Messages</RouterLink>
+        <RouterLink class="relative hover:text-yellow-400 transition" to="/messages">
+          Messages
+          <span
+            v-if="totalUnread > 0"
+            class="absolute -right-3 -top-2 inline-flex min-w-[18px] items-center justify-center rounded-full bg-[#F6A623] px-1 text-[10px] font-bold text-[#241A0E]"
+          >
+            {{ totalUnread > 9 ? '9+' : totalUnread }}
+          </span>
+        </RouterLink>
         <RouterLink class="hover:text-yellow-400 transition" to="/login">Login</RouterLink>
         <NotificationsBell />
       </nav>
@@ -43,9 +51,57 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { onBeforeUnmount, ref } from "vue";
 import { RouterLink } from "vue-router";
 import NotificationsBell from "@/components/social/NotificationsBell.vue";
+import { auth, db } from "@/lib/firebase";
+import { onAuthStateChanged } from "firebase/auth";
+import { collection, onSnapshot, orderBy, query, where } from "firebase/firestore";
 
 const menuOpen = ref(false);
+const totalUnread = ref(0);
+let unsub: (() => void) | null = null;
+let unsubAuth: (() => void) | null = null;
+
+const listenUnread = (uid: string) => {
+  if (unsub) {
+    unsub();
+    unsub = null;
+  }
+  const convCol = collection(db, "conversations");
+  const q = query(convCol, where("participants", "array-contains", uid), orderBy("updatedAt", "desc"));
+  unsub = onSnapshot(
+    q,
+    (snap) => {
+      let sum = 0;
+      snap.docs.forEach((d) => {
+        const data = d.data() as any;
+        const unread = data.unreadCountByUser?.[uid] || 0;
+        sum += unread;
+      });
+      totalUnread.value = sum;
+    },
+    (err) => {
+      console.error("Unread listener failed", err);
+      totalUnread.value = 0;
+    }
+  );
+};
+
+unsubAuth = onAuthStateChanged(auth, (user) => {
+  if (user?.uid) {
+    listenUnread(user.uid);
+  } else {
+    totalUnread.value = 0;
+    if (unsub) {
+      unsub();
+      unsub = null;
+    }
+  }
+});
+
+onBeforeUnmount(() => {
+  if (unsub) unsub();
+  if (unsubAuth) unsubAuth();
+});
 </script>

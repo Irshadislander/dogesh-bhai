@@ -149,6 +149,7 @@ import trioTall from "@/assets/Dogeshbhai/trio-tall.png";
 import singleDogChain from "@/assets/Dogeshbhai/single-dog-chain.png";
 import singleDogHoodie from "@/assets/Dogeshbhai/single-dog-hoodie.png";
 import { auth, db } from "@/lib/firebase";
+import { useRouter } from "vue-router";
 
 const form = reactive({
   ownerName: "",
@@ -165,6 +166,7 @@ const outfits = ["Hoodie", "Chain", "Full Drip"];
 const saving = ref(false);
 const saveError = ref<string | null>(null);
 const saveSuccess = ref(false);
+const router = useRouter();
 
 const previewImage = computed(() => {
   if (form.outfit === "Chain") return singleDogChain;
@@ -203,6 +205,7 @@ const saveBhaiProfile = async () => {
     });
 
     saveSuccess.value = true;
+    await router.push("/feed/posts");
   } catch (err) {
     console.error("Failed to save dog profile", err);
     saveError.value = "Could not save your Bhai profile. Please try again.";

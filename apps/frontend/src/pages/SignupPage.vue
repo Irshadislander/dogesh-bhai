@@ -8,10 +8,11 @@
 
       <form class="space-y-4" @submit.prevent="onSubmit">
         <div>
-          <label class="block text-xs font-medium uppercase tracking-wide text-[#5A4634]">Display name</label>
+          <label class="block text-xs font-medium uppercase tracking-wide text-[#5A4634]">Full name</label>
           <input
-            v-model="displayName"
+            v-model="fullName"
             type="text"
+            required
             class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#F6A623] focus:ring-1 focus:ring-[#F6A623]"
             placeholder="Dogesh Lover"
           />
@@ -28,15 +29,48 @@
           />
         </div>
 
-        <div>
-          <label class="block text-xs font-medium uppercase tracking-wide text-[#5A4634]">Password</label>
-          <input
-            v-model="password"
-            type="password"
-            required
-            class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#F6A623] focus:ring-1 focus:ring-[#F6A623]"
-            placeholder="••••••••"
-          />
+        <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <div>
+            <label class="block text-xs font-medium uppercase tracking-wide text-[#5A4634]">Password</label>
+            <input
+              v-model="password"
+              type="password"
+              required
+              class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#F6A623] focus:ring-1 focus:ring-[#F6A623]"
+              placeholder="••••••••"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium uppercase tracking-wide text-[#5A4634]">Confirm password</label>
+            <input
+              v-model="confirmPassword"
+              type="password"
+              required
+              class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#F6A623] focus:ring-1 focus:ring-[#F6A623]"
+              placeholder="Repeat password"
+            />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <div>
+            <label class="block text-xs font-medium uppercase tracking-wide text-[#5A4634]">Date of birth</label>
+            <input
+              v-model="dateOfBirth"
+              type="date"
+              class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#F6A623] focus:ring-1 focus:ring-[#F6A623]"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-medium uppercase tracking-wide text-[#5A4634]">City</label>
+            <input
+              v-model="city"
+              type="text"
+              class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#F6A623] focus:ring-1 focus:ring-[#F6A623]"
+              placeholder="Mumbai, Delhi, Bangalore..."
+            />
+          </div>
         </div>
 
         <p v-if="errorMessage" class="text-sm text-red-600">{{ errorMessage }}</p>
@@ -61,27 +95,55 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useRouter } from "vue-router";
-import { getAuth, createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { app } from "@/lib/firebase";
+import { getAuth, createUserWithEmailAndPassword, updateProfile, sendEmailVerification } from "firebase/auth";
+import { app, db } from "@/lib/firebase";
+import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 
 const auth = getAuth(app);
 const router = useRouter();
 
-const displayName = ref("");
+const fullName = ref("");
 const email = ref("");
 const password = ref("");
+const confirmPassword = ref("");
+const dateOfBirth = ref("");
+const city = ref("");
 const loading = ref(false);
 const errorMessage = ref<string | null>(null);
 
 const onSubmit = async () => {
   errorMessage.value = null;
+
+  if (!fullName.value.trim()) {
+    errorMessage.value = "Please enter your full name.";
+    return;
+  }
+  if (password.value !== confirmPassword.value) {
+    errorMessage.value = "Passwords do not match.";
+    return;
+  }
+  if (password.value.length < 6) {
+    errorMessage.value = "Password must be at least 6 characters.";
+    return;
+  }
+
   loading.value = true;
   try {
     const cred = await createUserWithEmailAndPassword(auth, email.value, password.value);
-    if (displayName.value.trim()) {
-      await updateProfile(cred.user, { displayName: displayName.value.trim() });
+    if (fullName.value.trim()) {
+      await updateProfile(cred.user, { displayName: fullName.value.trim() });
     }
-    await router.push("/feed/posts");
+
+    await setDoc(doc(db, "users", cred.user.uid), {
+      fullName: fullName.value.trim(),
+      email: email.value.trim().toLowerCase(),
+      city: city.value.trim(),
+      dateOfBirth: dateOfBirth.value || null,
+      createdAt: serverTimestamp(),
+    });
+
+    await sendEmailVerification(cred.user);
+    await router.push("/verify-email");
   } catch (err: any) {
     console.error("Signup failed", err);
     errorMessage.value = err?.message || "Failed to create account.";
