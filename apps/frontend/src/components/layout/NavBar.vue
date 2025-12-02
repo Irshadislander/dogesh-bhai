@@ -17,7 +17,7 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
-<nav class="hidden items-center gap-6 text-sm font-medium text-white md:flex">
+<nav class="hidden items-center gap-4 text-sm font-medium text-white md:flex">
         <RouterLink class="hover:text-yellow-400 transition" to="/">Home</RouterLink>
         <RouterLink class="hover:text-yellow-400 transition" to="/feed/posts">Feed Posts</RouterLink>
         <RouterLink class="hover:text-yellow-400 transition" to="/feed/reels">Feed Reels</RouterLink>
@@ -32,6 +32,15 @@
             {{ totalUnread > 9 ? '9+' : totalUnread }}
           </span>
         </RouterLink>
+        <form class="relative" @submit.prevent="handleSubmit">
+          <input
+            v-model="searchQuery"
+            type="search"
+            placeholder="Search dogs, humans, or tags…"
+            class="w-64 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs text-white placeholder:text-white/70 focus:border-yellow-300 focus:bg-white/20 focus:outline-none"
+          />
+          <button type="submit" class="absolute right-2 top-1/2 -translate-y-1/2 text-[12px] text-white/80">🔍</button>
+        </form>
         <RouterLink class="hover:text-yellow-400 transition" to="/login">Login</RouterLink>
         <NotificationsBell />
       </nav>
@@ -44,6 +53,15 @@
         <RouterLink class="rounded px-3 py-2 hover:bg-white/10 transition" to="/dashboard" @click="menuOpen = false">Dashboard</RouterLink>
         <RouterLink class="rounded px-3 py-2 hover:bg-white/10 transition" to="/community" @click="menuOpen = false">Community</RouterLink>
         <RouterLink class="rounded px-3 py-2 hover:bg-white/10 transition" to="/messages" @click="menuOpen = false">Messages</RouterLink>
+        <form class="flex items-center gap-2 rounded px-3 py-2" @submit.prevent="handleSubmit">
+          <input
+            v-model="searchQuery"
+            type="search"
+            placeholder="Search…"
+            class="w-full rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs text-white placeholder:text-white/70 focus:border-yellow-300 focus:bg-white/20 focus:outline-none"
+          />
+          <button type="submit" class="text-sm text-white">Go</button>
+        </form>
         <RouterLink class="rounded px-3 py-2 hover:bg-white/10 transition" to="/login" @click="menuOpen = false">Login</RouterLink>
       </div>
     </div>
@@ -57,11 +75,14 @@ import NotificationsBell from "@/components/social/NotificationsBell.vue";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { collection, onSnapshot, orderBy, query, where } from "firebase/firestore";
+import { useRouter } from "vue-router";
 
 const menuOpen = ref(false);
 const totalUnread = ref(0);
 let unsub: (() => void) | null = null;
 let unsubAuth: (() => void) | null = null;
+const searchQuery = ref("");
+const router = useRouter();
 
 const listenUnread = (uid: string) => {
   if (unsub) {
@@ -104,4 +125,11 @@ onBeforeUnmount(() => {
   if (unsub) unsub();
   if (unsubAuth) unsubAuth();
 });
+
+const handleSubmit = () => {
+  const q = searchQuery.value.trim();
+  if (!q) return;
+  router.push({ name: "Search", query: { q } });
+  menuOpen.value = false;
+};
 </script>

@@ -9,6 +9,7 @@
 
     <section class="py-10">
       <div class="mx-auto flex max-w-3xl flex-col gap-6 px-4 sm:px-6">
+        <TrendingHashtags post-type="post" />
         <div ref="createRef">
           <CreatePost @created="handleCreated" />
         </div>
@@ -62,6 +63,7 @@ import { collection, onSnapshot, orderBy, query, where } from "firebase/firestor
 import { db } from "@/lib/firebase";
 import CreatePost from "@/components/social/CreatePost.vue";
 import PostCard from "@/components/social/PostCard.vue";
+import TrendingHashtags from "@/components/social/TrendingHashtags.vue";
 
 type FeedPost = {
   id: string;

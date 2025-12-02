@@ -19,6 +19,8 @@ import HashtagExplorePage from "@/pages/HashtagExplorePage.vue";
 import HashtagPage from "@/pages/HashtagPage.vue";
 import VerifyEmailPage from "@/pages/VerifyEmailPage.vue";
 import DogRegistrationIntro from "@/pages/DogRegistrationIntro.vue";
+import SearchPage from "@/pages/SearchPage.vue";
+import ChallengesPage from "@/pages/ChallengesPage.vue";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { collection, getDocs, limit, query, where } from "firebase/firestore";
@@ -45,6 +47,8 @@ const router = createRouter({
     { path: "/feed", name: "feed", component: FeedPage },
     { path: "/feed/posts", name: "feed-posts", component: FeedPostsPage },
     { path: "/feed/reels", name: "feed-reels", component: FeedReelsPage },
+    { path: "/search", name: "Search", component: SearchPage },
+    { path: "/challenges", name: "Challenges", component: ChallengesPage },
     {
       path: "/profile/:userId",
       name: "profile",

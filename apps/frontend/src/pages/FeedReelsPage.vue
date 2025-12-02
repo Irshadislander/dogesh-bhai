@@ -2,6 +2,7 @@
   <main class="min-h-screen bg-[#04343A] text-white">
     <div class="mx-auto flex max-w-3xl flex-col gap-4 px-4 py-4 sm:px-6">
       <CreatePost @created="handleCreated" />
+      <TrendingHashtags post-type="reel" />
     </div>
 
     <div class="h-screen snap-y snap-mandatory overflow-y-scroll">
@@ -122,6 +123,7 @@ import { RouterLink } from "vue-router";
 import { useRouter } from "vue-router";
 import ReelCommentsOverlay from "@/components/social/ReelCommentsOverlay.vue";
 import ReelSharePanel from "@/components/social/ReelSharePanel.vue";
+import TrendingHashtags from "@/components/social/TrendingHashtags.vue";
 
 type Reel = {
   id: string;
